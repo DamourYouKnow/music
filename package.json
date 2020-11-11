@@ -1,0 +1,42 @@
+{
+  "name": "typescript-sample-project",
+  "version": "0.0.0",
+  "description": "TypeScript sample project",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ./node_modules/ts-node/dist/bin.js ./src/server/server.ts",
+    "clean": "rm rf public/scripts/*",
+    "lint": "./node_modules/.bin/eslint . --ext .js,.ts,.tsx",
+    "lint-fix": "./node_modules/.bin/eslint . --fix --ext .js,.ts,.tsx",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npx rollup -c",
+    "build-prod": "npx rollup -c --environment BUILD:production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DamourYouKnow/typescript-sample-project.git"
+  },
+  "author": "DamourYouKnow",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DamourYouKnow/typescript-sample-project/issues"
+  },
+  "homepage": "https://github.com/DamourYouKnow/typescript-sample-project#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "@types/express": "^4.17.3",
+    "@types/node": "^12.12.29",
+    "@typescript-eslint/eslint-plugin": "^2.22.0",
+    "@typescript-eslint/parser": "^2.17.0",
+    "eslint": "^6.8.0",
+    "rollup": "^1.0.0",
+    "rollup-plugin-uglify": "^6.0.4",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "@rollup/plugin-typescript": "^4.0.0",
+    "express": "^4.17.1"
+  }
+}
