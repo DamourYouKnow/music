@@ -1,36 +1,41 @@
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
-import {uglify} from 'rollup-plugin-uglify';
-
-const extensions = ['.js', '.jsx', '.ts', '.tsx'];
+import babel from 'rollup-plugin-babel';
+import {terser} from 'rollup-plugin-terser';
+import {DEFAULT_EXTENSIONS} from '@babel/core';
 
 export default function() {
-    const prod = process.env.BUILD === 'production' ? true : false;
-    console.log(`Building ${prod ? 'prod' : 'dev'}`);
+    const prod = process.env.BUILD === 'production';
+    console.log(`Building ${prod ? 'prod' : 'dev'} site`);
 
     return {
         input: './src/client/app.ts',
         output: {
-            input: 'src/client/app.ts',
+            exports: 'named',
+            name: 'App',
             file: 'public/scripts/app.js',
             format: 'iife',
             sourcemap: prod ? undefined : 'inline'
         },
         plugins: [
-            resolve({extensions}),
+            resolve({browser: true}),
             commonjs(),
             typescript({
-                module: 'es2015',
-                target: 'es5',
-                strict: true,
-                moduleResolution: 'node',
-                allowSyntheticDefaultImports: true,
                 sourceMap: !prod,
                 inlineSourceMap: !prod,
                 inlineSources: !prod
             }),
-            ...(prod ? [uglify()] : [])
+            babel({
+                exclude: ['*.html'],
+                extensions: [
+                    ...DEFAULT_EXTENSIONS,
+                    '.ts',
+                    '.tsx'
+                ],
+                runtimeHelpers: true
+            }),
+            ...(prod ? [terser()] : [])
         ],
     }
 };
