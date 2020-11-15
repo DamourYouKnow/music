@@ -84,12 +84,13 @@ interface Client {
 }
 
 const rooms = new Map<string, Room>();
-rooms.set('a', new Room('a')); // Manually creating a room for testing...
 const streamPath = path.join(__dirname, '../../streams/');
 
 // Request to create new room.
 app.post('/room', (req, res) => {
-    return;
+    const roomId = uuid.v4().slice(0, 8);
+    rooms.set(roomId, new Room(roomId));
+    res.json({room: roomId});
 });
 
 app.get('/subscribe/*', (req, res) => {
@@ -231,6 +232,15 @@ app.get('/room/*', (req, res) => {
 app.get('/track/*', (req, res) => {
     const trackFilename = resource(req.path);
     res.sendFile(streamPath + trackFilename);
+});
+
+app.get('/*', (req, res) => {
+    const roomId = req.path;
+    if (roomId && !rooms.has(roomId.slice(1))) {
+        res.sendStatus(404);
+        return;
+    }
+    res.sendFile(path.join(__dirname, '../../public/index.html'));
 });
 
 function resource(path: string): string {
