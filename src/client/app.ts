@@ -1,5 +1,12 @@
 import axios from 'axios';
 
+import { Track } from '../shared/types';
+
+interface Room {
+    playing: Track | null;
+    queue: Track[];
+}
+
 let currTrackId: string | null = null;
 
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
@@ -8,7 +15,7 @@ if (!audioStream) throw Error('No audio stream element');
 
 const eventSource = new EventSource('/join/a');
 eventSource.addEventListener('message', (message) => {
-    const room = JSON.parse(message.data);
+    const room = JSON.parse(message.data) as Room;
     updateRoom(room);
 
     if (room.playing) {
@@ -39,7 +46,7 @@ async function initRoom() {
     updateRoom(res.data);
 }
 
-function updateRoom(room) {
+function updateRoom(room: Room) {
     // Update queue interface.
     const queue = document.getElementById('queue');
     if (!queue) throw Error('No queue element');

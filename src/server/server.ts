@@ -5,6 +5,8 @@ import * as youtubedl from 'ytdl-core';
 import * as bodyParser from 'body-parser';
 import * as uuid from 'uuid';
 
+import { Track } from '../shared/types';
+
 const app = express();
 const port = 8080;
 
@@ -70,13 +72,6 @@ class Room {
             queue: this.queue
         };
     }
-}
-
-interface Track {
-    id: string;
-    title: string;
-    length: number; // In milliseconds
-    thumbnail?: string;
 }
 
 interface Client {
