@@ -101,6 +101,11 @@ app.post('/queue', (req, res) => {
         return;
     }
 
+    if (room.queue.length > 100) {
+        res.status(429).send('Room capacity reached');
+        return;
+    }
+
     const trackId = youtubedl.getVideoID(videoUrl);
     if (room.trackIdSet.has(trackId)) {
         res.status(409).send('Item already in queue');
@@ -115,7 +120,7 @@ app.post('/queue', (req, res) => {
             id: trackId,
             title: info.videoDetails.title,
             length: Number(info.videoDetails.lengthSeconds),
-            thumbnail: info.videoDetails.thumbnail.thumbnails[0].url
+            thumbnail: info.videoDetails.thumbnail.thumbnails[0].url,
         };
         video.pipe(fs.createWriteStream(streamPath + trackId + '.mp3'));
         console.log('Download started');
