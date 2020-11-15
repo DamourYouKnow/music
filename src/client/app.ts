@@ -1,32 +1,20 @@
 import axios from 'axios';
 
-import { Track } from '../shared/types';
+import { Track, QueueRequest } from '../shared/types';
 
 interface Room {
     playing: Track | null;
     queue: Track[];
 }
 
+const room = 'a';
 let currTrackId: string | null = null;
+let userId = '';
 
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
 if (!audioStream) throw Error('No audio stream element');
 
-
-const eventSource = new EventSource('/join/a');
-eventSource.addEventListener('message', (message) => {
-    const room = JSON.parse(message.data) as Room;
-    updateRoom(room);
-
-    if (room.playing) {
-        if (currTrackId == null || currTrackId != room.playing.id) {
-            currTrackId = room.playing.id;
-            audioStream.src = `/track/${room.playing.id}.mp3`;
-        }
-    }
-});
-
-initRoom();
+joinRoom(room);
 
 const queueBtn = document.getElementById('queue-btn') as HTMLButtonElement;
 queueBtn.onclick = async () => {
@@ -34,15 +22,36 @@ queueBtn.onclick = async () => {
         'queue-input'
     ) as HTMLInputElement;
     if (!queueInput) throw Error('No queue input element');
-    const data = {
-        room: 'a', // Manually created room for testing...
+    const data: QueueRequest = {
+        userId: userId,
+        room: room, // Manually created room for testing...
         url: queueInput.value
     };
     await axios.post('/queue', data);
 };
 
-async function initRoom() {
-    const res = await axios.get('/room/a');
+async function joinRoom(room: string) {
+    const res = await axios.post(`/join/${room}`);
+    userId = res.data.userId;
+
+    const eventSource = new EventSource(`/subscribe/${room}?userId=${userId}`);
+    eventSource.addEventListener('message', (message) => {
+        const room = JSON.parse(message.data) as Room;
+        updateRoom(room);
+    
+        if (room.playing) {
+            if (currTrackId == null || currTrackId != room.playing.id) {
+                currTrackId = room.playing.id;
+                audioStream.src = `/track/${room.playing.id}.mp3`;
+            }
+        }
+    });
+
+    await initRoom(room);
+}
+
+async function initRoom(room: string) {
+    const res = await axios.get(`/room/${room}`);
     updateRoom(res.data);
 }
 

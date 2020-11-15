@@ -5,7 +5,7 @@ import * as youtubedl from 'ytdl-core';
 import * as bodyParser from 'body-parser';
 import * as uuid from 'uuid';
 
-import { Track } from '../shared/types';
+import { Track, QueueRequest } from '../shared/types';
 
 const app = express();
 const port = 8080;
@@ -20,14 +20,14 @@ class Room {
     id: string;
     queue: Track[];
     playing: Track | null;
-    clients: Set<Client>;
+    clients: Map<string, Client | null>;
     timer?: NodeJS.Timeout;
     trackIdSet: Set<string>;
 
     constructor(id: string) {
         this.id = id;
         this.queue = [];
-        this.clients = new Set();
+        this.clients = new Map();
         this.trackIdSet = new Set();
     }
 
@@ -60,8 +60,12 @@ class Room {
 
     // Send room state to all users in the room.
     notify() {
-        this.clients.forEach((client) => {
-            client.res.write(`data: ${JSON.stringify(this.roomJson())}\n\n`);
+        Array.from(this.clients.values()).forEach((client) => {
+            if (client) {
+                client.res.write(
+                    `data: ${JSON.stringify(this.roomJson())}\n\n`
+                );
+            }
         });
     }
 
@@ -88,43 +92,75 @@ app.post('/room', (req, res) => {
     return;
 });
 
-app.get('/join/*', (req, res) => {
+app.get('/subscribe/*', (req, res) => {
     const roomId = resource(req.path);
+    const userId = req.query['userId'] as string;
+
+    if (!userId) {
+        res.sendStatus(401);
+        return;
+    }
+
+    const room = rooms.get(roomId);
+    if (!room) {
+        res.sendStatus(404);
+        return;
+    } 
+
+    const validUser = room.clients.has(userId);
+    if (!validUser) {
+        res.sendStatus(403);
+        return;
+    }
+
     const client: Client = {res: res, req: req};
-    rooms.get(roomId).clients.add(client);
+    room.clients.set(userId, client);
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Content-Type', 'text/event-stream');
     res.flushHeaders();
-    console.log('User joined');
+    console.log('User subscribed');
 
     res.on('close', () => {
         console.log('User disconnected');
         res.end();
-        rooms.get(roomId).clients.delete(client);
+        rooms.get(roomId).clients.delete(userId);
     });
+});
+
+app.post('/join/*', (req, res) => {
+    const roomId = resource(req.path);
+    const room = rooms.get(roomId);
+    if (!room) {
+        res.sendStatus(404);
+        return;
+    }
+
+    const userId = uuid.v4();
+    // The client value will be set on subscribe.
+    room.clients.set(userId, null);
+    res.json({userId: userId});
 });
 
 // Request to queue song in a room. TODO: add room id to url.
 app.post('/queue', (req, res) => {
     console.log(req.body);
 
-    const room = rooms.get(req.body.room);
+    const body = req.body as QueueRequest;
+    const room = rooms.get(body.room);
     if (!room) {
         res.sendStatus(400);
         return;
     }
+    if (!body.userId) {
+        res.sendStatus(401);
+        return;
+    }
+    if (!room.clients.has(body.userId)) {
+        res.sendStatus(403);
+        return;
+    }
 
-    const enqueue = (track: Track) => {
-        room.queue.push(track);
-        if (!room.playing) {
-            room.next();
-        } else {
-            room.notify();
-        }
-        res.sendStatus(200);
-    };
-
-    const videoUrl = req.body.url;
+    const videoUrl = body.url;
     if (!youtubedl.validateURL(videoUrl)) {
         res.status(400).send('Invalid URL');
         return;
@@ -140,6 +176,16 @@ app.post('/queue', (req, res) => {
         res.status(409).send('Item already in queue');
         return;
     }
+
+    const enqueue = (track: Track) => {
+        room.queue.push(track);
+        if (!room.playing) {
+            room.next();
+        } else {
+            room.notify();
+        }
+        res.sendStatus(200);
+    };
 
     room.trackIdSet.add(trackId);
     const video = youtubedl(trackId, {filter: 'audioonly'});
