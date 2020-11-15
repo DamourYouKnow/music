@@ -12,6 +12,7 @@ let currTrackId: string | null = null;
 let userId = '';
 
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
+audioStream.volume = 0.4;
 if (!audioStream) throw Error('No audio stream element');
 
 joinRoom(room);
