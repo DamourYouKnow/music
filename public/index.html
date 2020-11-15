@@ -2,15 +2,29 @@
 
 <html lang="en">
   <head>
+    <title>Our Music Player</title>
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="css/style.css" />
   </head>
 
   <body>
-    <audio controls autoplay="autoplay" id="audio-stream"></audio>
-    <input type="text" id="queue-input"></input>
-    <button type="button" id="queue-btn">Queue</button>
-    <ul id="queue"></ul>
+    <h1>
+      M U S I C
+    </h1>
+    <div id="queueing">
+      <input type="text" id="queue-input" placeholder="Enter YouTube Link (e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ)"></input>
+      <button type="button" id="queue-btn">Queue</button>
+    </div>
+    <div id="now-playing">
+      <h3>Now playing:</h3>
+      <div id="np">
+        
+        <audio controls autoplay="autoplay" id="audio-stream"></audio>
+      </div>
+    </div>
+    <main id="queue">
+      <h3>Current Queue:</h3>
+    </main>
     <script src="scripts/app.js"></script>
   </body>
 </html>

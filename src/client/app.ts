@@ -44,6 +44,10 @@ async function joinRoom(room: string) {
             if (currTrackId == null || currTrackId != room.playing.id) {
                 currTrackId = room.playing.id;
                 audioStream.src = `/track/${room.playing.id}.mp3`;
+                const now = document.getElementById('np')
+                const thumbnail = document.createElement('img');
+                thumbnail.src = room.playing.thumbnail;
+                now.append(thumbnail);
             }
         }
     });
@@ -60,9 +64,10 @@ function updateRoom(room: Room) {
     // Update queue interface.
     const queue = document.getElementById('queue');
     if (!queue) throw Error('No queue element');
-    queue.innerHTML = '';
+    queue.innerHTML = '<h3>Current Queue: </h3>';
     for (const content of room.queue) {
-        const item = document.createElement('li');
+
+        const item = document.createElement('div');
 
         const thumbnail = document.createElement('img');
         thumbnail.src = content.thumbnail;
