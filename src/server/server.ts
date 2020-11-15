@@ -84,7 +84,6 @@ interface Client {
 }
 
 const rooms = new Map<string, Room>();
-rooms.set('a', new Room('a')); // Manually creating a room for testing...
 const streamPath = path.join(__dirname, '../../streams/');
 
 // Request to create new room.

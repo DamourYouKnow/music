@@ -32,7 +32,7 @@ queueBtn.onclick = async () => {
 };
 
 async function load() {
-    room = location.pathname;
+    room = location.pathname.slice(1);
     if (room) {
         try {
             await joinRoom(room);
