@@ -1,8 +1,17 @@
 import axios from 'axios';
 
-const mediaStream = new MediaStream();
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
 if (!audioStream) throw Error('No audio stream element');
+
+
+const eventSource = new EventSource('/join/a');
+eventSource.addEventListener('message', (message) => {
+    const room = JSON.parse(message.data);
+    const track = room.queue[0];
+    if (track) {
+        audioStream.src = `/track/${track.id}.mp3`;
+    }
+});
 
 
 const queueBtn = document.getElementById('queue-btn') as HTMLButtonElement;
@@ -16,9 +25,4 @@ queueBtn.onclick = async () => {
         url: queueInput.value
     };
     await axios.post('/queue', data);
-    const response = await (await axios.get(`/queue/${data.room}`)).data;
-    const track = response[0];
-    if (track) {
-        audioStream.src = `/track/${track.id}.mp3`;
-    }
 };
