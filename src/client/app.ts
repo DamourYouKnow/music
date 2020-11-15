@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+let currTrackId: string | null = null;
+
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
 if (!audioStream) throw Error('No audio stream element');
 
@@ -8,9 +10,12 @@ const eventSource = new EventSource('/join/a');
 eventSource.addEventListener('message', (message) => {
     const room = JSON.parse(message.data);
     updateRoom(room);
-    const track = room.queue[0];
-    if (track) {
-        audioStream.src = `/track/${track.id}.mp3`;
+
+    if (room.playing) {
+        if (currTrackId == null || currTrackId != room.playing.id) {
+            currTrackId = room.playing.id;
+            audioStream.src = `/track/${room.playing.id}.mp3`;
+        }
     }
 });
 

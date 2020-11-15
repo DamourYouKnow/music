@@ -17,7 +17,9 @@ console.log(`Listening on http://localhost:${port}`);
 class Room {
     id: string;
     queue: Track[];
-    clients: Set<Client>; // Can't use Response type in generics?
+    playing: Track | null;
+    clients: Set<Client>;
+    timer?: NodeJS.Timeout;
     trackIdSet: Set<string>;
 
     constructor(id: string) {
@@ -27,7 +29,34 @@ class Room {
         this.trackIdSet = new Set();
     }
 
-    // Send new queue to all users in the room.
+    // Play next item in queue
+    next() {
+        const nextItem = this.queue[0];
+        if (!nextItem) {
+            this.playing = null;
+            this.notify();
+            return;
+        }
+
+        this.playing = nextItem;
+        this.timer = setTimeout(() => {
+            // Remove old content and play next item.
+            this.queue.shift();
+            this.next();
+             fs.unlink(`${streamPath + nextItem.id}.mp3`, (fsErr) => {
+                console.error(fsErr);
+            });
+        }, nextItem.length * 1000);
+
+        this.notify();
+    }
+
+    skip() {
+        if (this.timer) clearTimeout(this.timer);
+        this.next();
+    }
+
+    // Send room state to all users in the room.
     notify() {
         this.clients.forEach((client) => {
             client.res.write(`data: ${JSON.stringify(this.roomJson())}\n\n`);
@@ -37,6 +66,7 @@ class Room {
     roomJson() {
         return {
             users: this.clients.size,
+            playing: this.playing,
             queue: this.queue
         };
     }
@@ -91,7 +121,11 @@ app.post('/queue', (req, res) => {
 
     const enqueue = (track: Track) => {
         room.queue.push(track);
-        room.notify();  
+        if (!room.playing) {
+            room.next();
+        } else {
+            room.notify();
+        }
         res.sendStatus(200);
     };
 
@@ -122,15 +156,12 @@ app.post('/queue', (req, res) => {
             length: Number(info.videoDetails.lengthSeconds),
             thumbnail: info.videoDetails.thumbnail.thumbnails[0].url,
         };
-        video.pipe(fs.createWriteStream(streamPath + trackId + '.mp3'));
+        video.pipe(fs.createWriteStream(`${streamPath + trackId}.mp3`));
         console.log('Download started');
         console.log('filename: ' + track.title);
     });
     video.on('error', (err) => {
         console.error(err);
-        fs.unlink(streamPath + trackId + '.mp3', (fsErr) => {
-            console.error(fsErr);
-        });
         room.trackIdSet.delete(trackId);
         res.sendStatus(500);
     });
