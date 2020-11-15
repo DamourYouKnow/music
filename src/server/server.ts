@@ -5,7 +5,7 @@ import * as youtubedl from 'ytdl-core';
 import * as bodyParser from 'body-parser';
 import * as uuid from 'uuid';
 
-import { Track, QueueRequest } from '../shared/types';
+import { Track, QueueRequest, RoomJson } from '../shared/types';
 
 const app = express();
 const port = 8080;
@@ -20,6 +20,7 @@ class Room {
     id: string;
     queue: Track[];
     playing: Track | null;
+    startTime: Date;
     clients: Map<string, Client | null>;
     timer?: NodeJS.Timeout;
     trackIdSet: Set<string>;
@@ -27,6 +28,8 @@ class Room {
     constructor(id: string) {
         this.id = id;
         this.queue = [];
+        this.playing = null;
+        this.startTime = new Date();
         this.clients = new Map();
         this.trackIdSet = new Set();
     }
@@ -41,6 +44,7 @@ class Room {
         }
 
         this.playing = nextItem;
+        this.startTime = new Date();
         this.timer = setTimeout(() => {
             // Remove old content and play next item.
             this.queue.shift();
@@ -69,10 +73,11 @@ class Room {
         });
     }
 
-    roomJson() {
+    roomJson(): RoomJson {
         return {
             users: this.clients.size,
             playing: this.playing,
+            time: (new Date().getTime() - this.startTime.getTime()) / 1000,
             queue: this.queue
         };
     }

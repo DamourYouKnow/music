@@ -1,21 +1,22 @@
 import axios from 'axios';
+import { loadavg } from 'os';
 
-import { Track, QueueRequest } from '../shared/types';
-
-interface Room {
-    playing: Track | null;
-    queue: Track[];
-}
+import { QueueRequest, RoomJson } from '../shared/types';
 
 let room = '';
 let currTrackId: string | null = null;
 let userId = '';
 
-load();
-
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
 audioStream.volume = 0.4;
 if (!audioStream) throw Error('No audio stream element');
+
+const listenBtn = document.getElementById('listen-btn');
+listenBtn.onclick = () => {
+    initRoom(room);
+};
+
+load();
 
 const queueBtn = document.getElementById('queue-btn') as HTMLButtonElement;
 queueBtn.onclick = async () => {
@@ -53,29 +54,39 @@ async function createRoom() {
 async function joinRoom(room: string) {
     const res = await axios.post(`/join/${room}`);
     userId = res.data.userId;
+    subscribe(room, userId);
+    await initRoom(room);
+}
 
+function subscribe(room, userId) {
     const eventSource = new EventSource(`/subscribe/${room}?userId=${userId}`);
     eventSource.addEventListener('message', (message) => {
-        const room = JSON.parse(message.data) as Room;
+        const room = JSON.parse(message.data) as RoomJson;
         updateRoom(room);
-    
-        if (room.playing) {
-            if (currTrackId == null || currTrackId != room.playing.id) {
-                currTrackId = room.playing.id;
-                audioStream.src = `/track/${room.playing.id}.mp3`;
-            }
-        }
+        updatePlayer(room);
     });
-
-    await initRoom(room);
 }
 
 async function initRoom(room: string) {
     const res = await axios.get(`/room/${room}`);
     updateRoom(res.data);
+    updatePlayer(res.data);
 }
 
-function updateRoom(room: Room) {
+function updatePlayer(room: RoomJson) {
+    if (room.playing) {
+        if (currTrackId == null || 
+            (currTrackId != room.playing.id || audioStream.paused)) 
+        {
+            currTrackId = room.playing.id;
+            audioStream.src = `/track/${room.playing.id}.mp3`;
+            audioStream.currentTime = room.time;
+            audioStream.play();
+        }
+    }
+}
+
+function updateRoom(room: RoomJson) {
     // Update queue interface.
     const queue = document.getElementById('queue');
     if (!queue) throw Error('No queue element');

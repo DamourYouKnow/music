@@ -10,3 +10,10 @@ export interface QueueRequest {
     room: string;
     url: string;
 }
+
+export interface RoomJson {
+    users: number;
+    playing: Track | null;
+    time: number;
+    queue: Track[];
+}
