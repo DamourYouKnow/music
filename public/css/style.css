@@ -23,9 +23,6 @@ main > div{
     background-color: #F4D6CC;
     width:70%;
     color: black;
-    margin-left:auto;
-    margin-right:auto;
-    text-align: center;
     padding:0.5em;
 }
 main > div > img{
