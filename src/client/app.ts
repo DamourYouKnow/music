@@ -7,15 +7,15 @@ interface Room {
     queue: Track[];
 }
 
-const room = 'a';
+let room = '';
 let currTrackId: string | null = null;
 let userId = '';
+
+load();
 
 const audioStream = document.getElementById('audio-stream') as HTMLAudioElement;
 audioStream.volume = 0.4;
 if (!audioStream) throw Error('No audio stream element');
-
-joinRoom(room);
 
 const queueBtn = document.getElementById('queue-btn') as HTMLButtonElement;
 queueBtn.onclick = async () => {
@@ -30,6 +30,25 @@ queueBtn.onclick = async () => {
     };
     await axios.post('/queue', data);
 };
+
+async function load() {
+    room = location.pathname;
+    if (room) {
+        try {
+            await joinRoom(room);
+        } catch {
+            await createRoom();
+        }
+    } else {
+        await createRoom();
+    }
+}
+
+async function createRoom() {
+    const res = await axios.post('/room');
+    room = res.data.room;
+    location.pathname = room;
+}
 
 async function joinRoom(room: string) {
     const res = await axios.post(`/join/${room}`);
