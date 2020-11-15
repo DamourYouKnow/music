@@ -18,11 +18,13 @@ class Room {
     id: string;
     queue: Track[];
     clients: Set<Client>; // Can't use Response type in generics?
+    trackIdSet: Set<string>;
 
     constructor(id: string) {
         this.id = id;
         this.queue = [];
         this.clients = new Set();
+        this.trackIdSet = new Set();
     }
 
     // Send new queue to all users in the room.
@@ -80,10 +82,14 @@ app.get('/join/*', (req, res) => {
 // Request to queue song in a room. TODO: add room id to url.
 app.post('/queue', (req, res) => {
     console.log(req.body);
-    const trackId = uuid.v4(); 
+
+    const room = rooms.get(req.body.room);
+    if (!room) {
+        res.sendStatus(400);
+        return;
+    }
 
     const enqueue = (track: Track) => {
-        const room = rooms.get(req.body.room);
         room.queue.push(track);
         room.notify();  
         res.sendStatus(200);
@@ -94,8 +100,15 @@ app.post('/queue', (req, res) => {
         res.status(400).send('Invalid URL');
         return;
     }
-    const videoId = youtubedl.getVideoID(videoUrl);
-    const video = youtubedl(videoUrl, {filter: 'audioonly'});
+
+    const trackId = youtubedl.getVideoID(videoUrl);
+    if (room.trackIdSet.has(trackId)) {
+        res.status(409).send('Item already in queue');
+        return;
+    }
+
+    room.trackIdSet.add(trackId);
+    const video = youtubedl(trackId, {filter: 'audioonly'});
     let track: Track | null = null;
     video.on('info', (info) => {
         track = {
@@ -113,6 +126,7 @@ app.post('/queue', (req, res) => {
         fs.unlink(streamPath + trackId + '.mp3', (fsErr) => {
             console.error(fsErr);
         });
+        room.trackIdSet.delete(trackId);
         res.sendStatus(500);
     });
     video.on('complete', (_) => {
@@ -128,8 +142,12 @@ app.post('/queue', (req, res) => {
 // Request to get queue of a room.
 app.get('/room/*', (req, res) => {
     const roomId = resource(req.path);
-    const room = rooms.get(roomId).roomJson();
-    res.json(room);
+    const room = rooms.get(roomId);
+    if (!room) {
+        res.sendStatus(404);
+        return;
+    }
+    res.json(room.roomJson());
 });
 
 // Request to get audio file location.
@@ -140,5 +158,5 @@ app.get('/track/*', (req, res) => {
 
 function resource(path: string): string {
     const split = path.split('/');
-    return split[split.length - 1];
+    return split[split.length - 1] || '';
 }
