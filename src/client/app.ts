@@ -63,11 +63,20 @@ async function joinRoom(room: string) {
             if (currTrackId == null || currTrackId != room.playing.id) {
                 currTrackId = room.playing.id;
                 audioStream.src = `/track/${room.playing.id}.mp3`;
-                const now = document.getElementById('np')
+                const now = document.getElementById('np');
+                now.innerHTML = '';
                 const thumbnail = document.createElement('img');
                 thumbnail.src = room.playing.thumbnail;
-                now.append(thumbnail);
+
+                const info = document.createElement('p');
+                info.textContent = `${room.playing.title}`;
+                
+                now.appendChild(info);
+                now.appendChild(thumbnail);
             }
+        }
+        else{
+             document.getElementById('np').innerHTML = '<p>Nothing is playing right now.</p>';
         }
     });
 
