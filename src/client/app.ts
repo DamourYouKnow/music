@@ -41,8 +41,16 @@ function updateRoom(room) {
     queue.innerHTML = '';
     for (const content of room.queue) {
         const item = document.createElement('li');
-        const duration = timeStr(new Date(content.length * 1000));
-        item.textContent = `${duration} - ${content.title}`;
+
+        const thumbnail = document.createElement('img');
+        thumbnail.src = content.thumbnail;
+
+        const info = document.createElement('span');
+        const duration = timeStr(new Date(content.length * 1000)); 
+        info.textContent = `${duration} - ${content.title}`;
+
+        item.appendChild(thumbnail);
+        item.appendChild(info);
         queue.appendChild(item);
     }
 }

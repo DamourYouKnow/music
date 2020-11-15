@@ -44,7 +44,7 @@ interface Track {
     id: string;
     title: string;
     length: number; // In milliseconds
-    thumbail?: string;
+    thumbnail?: string;
 }
 
 interface Client {
@@ -101,7 +101,8 @@ app.post('/queue', (req, res) => {
         track = {
             id: trackId,
             title: info.videoDetails.title,
-            length: Number(info.videoDetails.lengthSeconds)
+            length: Number(info.videoDetails.lengthSeconds),
+            thumbnail: info.videoDetails.thumbnail.thumbnails[0].url
         };
         video.pipe(fs.createWriteStream(streamPath + trackId + '.mp3'));
         console.log('Download started');
