@@ -7,24 +7,14 @@ if (!audioStream) throw Error('No audio stream element');
 const eventSource = new EventSource('/join/a');
 eventSource.addEventListener('message', (message) => {
     const room = JSON.parse(message.data);
-
-    // Update queue interface.
-    const queue = document.getElementById('queue');
-    if (!queue) throw Error('No queue element');
-    queue.innerHTML = '';
-    for (const content of room.queue) {
-        const item = document.createElement('li');
-        const duration = timeStr(new Date(content.length * 1000));
-        item.textContent = `${duration} - ${content.title}`;
-        queue.appendChild(item);
-    }
-
+    updateRoom(room);
     const track = room.queue[0];
     if (track) {
         audioStream.src = `/track/${track.id}.mp3`;
     }
 });
 
+initRoom();
 
 const queueBtn = document.getElementById('queue-btn') as HTMLButtonElement;
 queueBtn.onclick = async () => {
@@ -39,6 +29,23 @@ queueBtn.onclick = async () => {
     await axios.post('/queue', data);
 };
 
+async function initRoom() {
+    const res = await axios.get('/room/a');
+    updateRoom(res.data);
+}
+
+function updateRoom(room) {
+    // Update queue interface.
+    const queue = document.getElementById('queue');
+    if (!queue) throw Error('No queue element');
+    queue.innerHTML = '';
+    for (const content of room.queue) {
+        const item = document.createElement('li');
+        const duration = timeStr(new Date(content.length * 1000));
+        item.textContent = `${duration} - ${content.title}`;
+        queue.appendChild(item);
+    }
+}
 
 function timeStr(time: Date): string {
     const minutes = time.getMinutes().toString().padStart(2, '0');
