@@ -36,7 +36,6 @@
     "@types/express": "^4.17.9",
     "@types/node": "^12.19.4",
     "@types/uuid": "^8.3.0",
-    "@types/youtube-dl": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
     "core-js": "^3.7.0",
@@ -52,6 +51,6 @@
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "uuid": "^8.3.1",
-    "youtube-dl": "^3.0.2"
+    "ytdl-core": "4.0.3"
   }
 }

@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as express from 'express';
 import * as fs from 'fs';
-import * as youtubedl from 'youtube-dl';
+import * as youtubedl from 'ytdl-core';
 import * as bodyParser from 'body-parser';
 import * as uuid from 'uuid';
 
@@ -88,19 +88,20 @@ app.post('/queue', (req, res) => {
         room.notify();  
         res.sendStatus(200);
     };
-    let track: Track | null = null;
 
     const videoUrl = req.body.url;
-    const video = youtubedl(
-        videoUrl,
-        ['--extract-audio', '--audio-format', 'mp3'],
-        {}
-    );
+    if (!youtubedl.validateURL(videoUrl)) {
+        res.status(400).send('Invalid URL');
+        return;
+    }
+    const videoId = youtubedl.getVideoID(videoUrl);
+    const video = youtubedl(videoUrl, {filter: 'audioonly'});
+    let track: Track | null = null;
     video.on('info', (info) => {
         track = {
             id: trackId,
-            title: info._filename,
-            length: info._duration_raw
+            title: info.videoDetails.title,
+            length: Number(info.videoDetails.lengthSeconds)
         };
         video.pipe(fs.createWriteStream(streamPath + trackId + '.mp3'));
         console.log('Download started');
