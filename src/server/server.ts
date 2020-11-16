@@ -130,6 +130,7 @@ app.get('/subscribe/*', (req, res) => {
     res.on('close', () => {
         console.log('User disconnected');
         res.end();
+        rooms.get(roomId).clients.set(userId, null);
     });
 });
 
