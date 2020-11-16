@@ -48,6 +48,7 @@ class Room {
         this.timer = setTimeout(() => {
             // Remove old content and play next item.
             this.queue.shift();
+            this.trackIdSet.delete(nextItem.id);
             this.next();
              fs.unlink(`${streamPath + nextItem.id}.mp3`, (fsErr) => {
                 console.error(fsErr);
