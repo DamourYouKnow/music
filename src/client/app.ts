@@ -80,8 +80,9 @@ function subscribe(room, userId) {
                 now.appendChild(thumbnail);
             }
         }
-        else{
-             document.getElementById('np').innerHTML = '<p>Nothing is playing right now.</p>';
+        else {
+            document.getElementById('np').innerHTML =
+                '<p>Nothing is playing right now.</p>';
         }
         updatePlayer(room);
     });
